@@ -68,12 +68,31 @@ def load_dataset(model_name, save_folder="./"):
         P and S are real-valued matrices
         A has values in {-1,0,1}. -1 means negative matching, 1: positive matching, 0: unknown matching.
     '''
-    assert model_name in ["Gottlieb", "Cdataset_Aonly", "indep", "Fdataset", "DNdataset", "Cdataset", "TRANSCRIPT", "PREDICT", "LRSSL", "PREDICT_Gottlieb"]
-    if (model_name in ["LRSSL", "PREDICT_Gottlieb", "OrphanDrug"]):
+    assert model_name in ["Gottlieb", "Cdataset_Aonly", "indep", "Fdataset", "DNdataset", "Cdataset", "TRANSCRIPT", "PREDICT", "LRSSL", "LRSSL2", "PREDICT_Gottlieb"]
+    if (model_name == "LRSSL"):
+        url_lrssl = "https://raw.githubusercontent.com/LiangXujun/LRSSL/master/"
+        lrssl_dataset_path = save_folder+"LRSSL/"
+        fnames = {
+            "A": "drug_dis_mat.txt", "P": "disease_similarity.txt", "S1": "drug_from_drugbank_without_ind_dommat.txt",
+            "S2": "drug_pubchem_mat.txt", "S3": "drug_target_domain_mat.txt", "N4": "drug_target_go_mat.txt", 
+            "N5": "drug_without_ind_dommat_new.txt", "S6": "drug_without_ind_gomat_new.txt", 
+            "N7": "drug_without_ind_pubchem_mat_new.txt",
+        }
+        if (not os.path.exists(lrssl_dataset_path+fnames["A"])):
+            subprocess.call(" ".join(['mkdir', '-p', lrssl_dataset_path]), shell=True)
+            for fn in fnames:
+                subprocess.call(" ".join(["wget", "-qO", lrssl_dataset_path+fnames[fn], url_lrssl+fnames[fn]]), shell=True)
+        A = pd.read_csv(lrssl_dataset_path+fnames["A"], index_col=0, sep="\t")
+        P = pd.read_csv(lrssl_dataset_path+fnames["P"], index_col=0, sep="\t")
+        A.columns = P.columns
+        S1 = pd.read_csv(lrssl_dataset_path+fnames["S2"], index_col=0, sep="\t")
+        S2 = pd.read_csv(lrssl_dataset_path+fnames["S3"], index_col=0, sep="\t")
+        S = S1.join(S2, how="outer").T[A.index]
+    if (model_name in ["LRSSL2", "PREDICT_Gottlieb", "OrphanDrug"]):
         print("Warning: this dataset has no drug/disease names!")
         url_dda_skf = "https://github.com/GCQ2119216031/DDA-SKF/raw/master/data/"
         dda_skf_dataset_path = save_folder+"DDA_SKF/data/"
-        mmodel_name = model_name if (model_name!="PREDICT_Gottlieb") else "PREDICT"
+        mmodel_name = model_name if (model_name=="OrphanDrug") else ("PREDICT" if (model_name=="PREDICT_Gottlieb") else "LRSSL")
         if (not os.path.exists(dda_skf_dataset_path+mmodel_name+".mat")):
             subprocess.call(" ".join(['mkdir', '-p', dda_skf_dataset_path]), shell=True)
             subprocess.call(" ".join(["wget", "-qO", dda_skf_dataset_path+mmodel_name+".mat", url_dda_skf+mmodel_name+".mat"]), shell=True)
@@ -82,21 +101,21 @@ def load_dataset(model_name, save_folder="./"):
             A = ddt["lrssladmatdgc"]
             S_chemical = ddt["lrsslsimmatdcchemical"]
             S_sideeffects = ddt["lrsslsimmatdcgo"]
-            S = pd.DataFrame(np.concatenate((S_chemical,S_sideeffects), axis=0), index=range(S_chemical.shape[0]+S_sideeffects.shape[0]), columns=range(S_chemical.shape[1]))
+            S = pd.DataFrame(np.concatenate((S_chemical,S_sideeffects), axis=0), index=range(S_chemical.shape[0]+S_sideeffects.shape[0]), columns=["drug%d" % (i+1) for i in range(S_chemical.shape[1])])
             S.index = [("chemical--" if (iss < S_chemical.shape[0]) else "se--")+str(s) for iss, s in enumerate(list(S.index))]
             P = ddt["lrsslsimmatdg"]
+            P = pd.DataFrame(P, index=range(P.shape[0]), columns=["disease%d" % (i+1) for i in range(P.shape[1])])
         elif (mmodel_name=="PREDICT"):
             A = ddt['predictAdMatdgc'].T
             S_chemical = ddt['predictSimMatdcChemical']
             S_domain = ddt['predictSimMatdcDomain']
             S_GO = ddt['predictSimMatdcGo']
-            S = pd.DataFrame(np.concatenate((S_chemical,S_domain,S_GO), axis=0), index=range(S_chemical.shape[0]+S_domain.shape[0]+S_GO.shape[0]), columns=range(S_chemical.shape[1]))
+            S = pd.DataFrame(np.concatenate((S_chemical,S_domain,S_GO), axis=0), index=range(S_chemical.shape[0]+S_domain.shape[0]+S_GO.shape[0]), columns=["drug%d" % (i+1) for i in range(S_chemical.shape[1])])
             S.index = [("chemical--" if (iss < S_chemical.shape[0]) else ("domain--" if (iss < S_chemical.shape[0]+S_domain.shape[0]) else "go--"))+str(s) for iss, s in enumerate(list(S.index))]
             P = ddt['predictSimMatdg']
+            P = pd.DataFrame(P, index=range(P.shape[0]), columns=["disease%d" % (i+1) for i in range(P.shape[1])])
         else:
             raise ValueError("Undefined dataset '%s'" % mmodel_name)
-        P = pd.DataFrame(P, index=range(P.shape[0]), columns=["disease%d" % (i+1) for i in range(P.shape[1])])
-        S = pd.DataFrame(S, index=range(S.shape[0]), columns=["drug%d" % (i+1) for i in range(S.shape[1])])
         A = pd.DataFrame(A, index=S.columns, columns=P.columns)
     if (model_name in ["TRANSCRIPT", "PREDICT"]):
         path=save_folder+model_name+"/" 
