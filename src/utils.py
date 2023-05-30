@@ -76,13 +76,13 @@ def load_dataset(model_name, save_folder="./"):
         mmodel_name = model_name if (model_name!="PREDICT_Gottlieb") else "PREDICT"
         if (not os.path.exists(dda_skf_dataset_path+mmodel_name+".mat")):
             subprocess.call(" ".join(['mkdir', '-p', dda_skf_dataset_path]), shell=True)
-            subprocess.call(" ".join(["wget", "-qO", dda_skf_dataset_path, url_dda_skf+mmodel_name+".mat"]), shell=True)
+            subprocess.call(" ".join(["wget", "-qO", dda_skf_dataset_path+mmodel_name+".mat", url_dda_skf+mmodel_name+".mat"]), shell=True)
         ddt = scipy.io.loadmat(dda_skf_dataset_path+mmodel_name+".mat")
         if (mmodel_name=="LRSSL"):
             A = ddt["lrssladmatdgc"]
             S_chemical = ddt["lrsslsimmatdcchemical"]
             S_sideeffects = ddt["lrsslsimmatdcgo"]
-            S = np.concatenate((S_chemical,S_sideeffects), axis=0)
+            S = pd.DataFrame(np.concatenate((S_chemical,S_sideeffects), axis=0), index=range(S_chemical.shape[0]+S_sideeffects.shape[0]), columns=range(S_chemical.shape[1]))
             S.index = [("chemical--" if (iss < S_chemical.shape[0]) else "se--")+str(s) for iss, s in enumerate(list(S.index))]
             P = ddt["lrsslsimmatdg"]
         elif (mmodel_name=="PREDICT"):
@@ -90,7 +90,7 @@ def load_dataset(model_name, save_folder="./"):
             S_chemical = ddt['predictSimMatdcChemical']
             S_domain = ddt['predictSimMatdcDomain']
             S_GO = ddt['predictSimMatdcGo']
-            S = np.concatenate((S_chemical,S_domain,S_GO), axis=0)
+            S = pd.DataFrame(np.concatenate((S_chemical,S_domain,S_GO), axis=0), index=range(S_chemical.shape[0]+S_domain.shape[0]+S_GO.shape[0]), columns=range(S_chemical.shape[1]))
             S.index = [("chemical--" if (iss < S_chemical.shape[0]) else ("domain--" if (iss < S_chemical.shape[0]+S_domain.shape[0]) else "go--"))+str(s) for iss, s in enumerate(list(S.index))]
             P = ddt['predictSimMatdg']
         else:
