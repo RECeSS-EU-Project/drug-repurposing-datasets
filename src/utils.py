@@ -13,8 +13,6 @@ from bs4 import BeautifulSoup
 
 import pubchempy as pcp
 
-## From https://github.com/RECeSS-EU-Project/drug-repurposing-datasets
-
 ###########################
 ## VERBOSE               ##
 ###########################
@@ -57,8 +55,8 @@ def matrix2ratings(df, user_col="user", item_col="item", rating_col="rating"):
     assert all([a in [-1,0,1] for a in np.unique(df.values.flatten())])
     non_missing = np.argwhere(df.values!=0)
     res_df = pd.DataFrame([], index=range(non_missing.shape[0]))
-    res_df[user_col] = [df.columns[x] for x in list(non_missing[:, 0].flatten())]
-    res_df[item_col] = [df.index[x] for x in list(non_missing[:, 1].flatten())]
+    res_df[user_col] = [df.columns[x] for x in list(non_missing[:, 1].flatten())]
+    res_df[item_col] = [df.index[x] for x in list(non_missing[:, 0].flatten())]
     res_df[rating_col] = [df.values[i,j] for i,j in non_missing.tolist()]
     return res_df[[user_col,item_col,rating_col]]
 
