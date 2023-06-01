@@ -13,6 +13,8 @@ from bs4 import BeautifulSoup
 
 import pubchempy as pcp
 
+## From https://github.com/RECeSS-EU-Project/drug-repurposing-datasets
+
 ###########################
 ## VERBOSE               ##
 ###########################
@@ -30,7 +32,7 @@ def print_dataset(ratings, user_col, item_col, rating_col):
     args += [ratings2.loc[ratings2[rating_col]==v].shape[0] for v in [1,-1,0]]
     assert args[2]+args[3]+args[4]==ratings2.shape[0]
     args[-1] = args[-1] if (args[-1]>0) else args[0]*args[1]-args[2]-args[3]
-    dataset_str = "Ndrugs=%d\tNdiseases=%d\n%d positive\t%d negative\t%d unknown matchings"
+    dataset_str = "Ratings: %d drugs\t%d diseases\n%d positive, %d negative, and %d unknown matchings"
     print(dataset_str % tuple(args))
     
 def compute_sparsity(df):
@@ -55,10 +57,10 @@ def matrix2ratings(df, user_col="user", item_col="item", rating_col="rating"):
     assert all([a in [-1,0,1] for a in np.unique(df.values.flatten())])
     non_missing = np.argwhere(df.values!=0)
     res_df = pd.DataFrame([], index=range(non_missing.shape[0]))
-    res_df[user_col] = [df.columns[x] for x in list(non_missing[:, 1].flatten())]
-    res_df[item_col] = [df.index[x] for x in list(non_missing[:,0].flatten())]
-    res_df[rating_col] = [v for v in df.values[non_missing[:,0], non_missing[:,1]].flatten()]
-    return res_df
+    res_df[user_col] = [df.columns[x] for x in list(non_missing[:, 0].flatten())]
+    res_df[item_col] = [df.index[x] for x in list(non_missing[:, 1].flatten())]
+    res_df[rating_col] = [df.values[i,j] for i,j in non_missing.tolist()]
+    return res_df[[user_col,item_col,rating_col]]
 
 def load_dataset(model_name, save_folder="./"):
     '''
