@@ -29,7 +29,13 @@ cd notebooks/ && jupyter notebook
 
 ## Licence
 
-These datasets and code are under an [OSI-approved](https://opensource.org/licenses/) [MIT license](https://raw.githubusercontent.com/RECeSS-EU-Project/drug-repurposing-datasets/main/LICENSE). Note that the final matrices for PREDICT are not available, due to the usage rules of the DrugBank dataset. However, one can run the corresponding notebook PREDICT_dataset.ipynb in order to get the final matrices. A partial dataset is downloadable on Zenodo.
+These datasets and code are under an [OSI-approved](https://opensource.org/licenses/) [MIT license](https://raw.githubusercontent.com/RECeSS-EU-Project/drug-repurposing-datasets/main/LICENSE). Note that the final matrices for PREDICT are not available, due to the usage rules of the DrugBank dataset. However, one can run the corresponding notebook *PREDICT_dataset.ipynb* in order to get the final matrices. A partial dataset is downloadable on Zenodo.
+
+## Citation
+
+```
+Clémence Réda. (2023). Jupyter Notebooks for building drug repurposing datasets in collaborative filtering (v2.0.0). Zenodo. https://doi.org/10.5281/zenodo.8014774
+```
 
 ## Community guidelines with respect to contributions, issue reporting, and support
 

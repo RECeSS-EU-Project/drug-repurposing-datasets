@@ -1,0 +1,10 @@
+cff-version: 1.0.0
+message: "If you use these notebooks, please cite them as below."
+authors:
+  - family-names: R\'{e}da
+    given-names: Cl\'{e}mence
+    orcid: https://orcid.org/0000-0003-3238-0258
+title: "Jupyter Notebooks for building drug repurposing datasets in collaborative filtering"
+version: 2.0.0
+doi: "10.5281/zenodo.8014774"
+date-released: 2023-06-07
