@@ -34,7 +34,9 @@ These datasets and code are under an [OSI-approved](https://opensource.org/licen
 ## Citation
 
 ```
-Clémence Réda. (2023). Jupyter Notebooks for building drug repurposing datasets in collaborative filtering (v2.0.0). Zenodo. https://doi.org/10.5281/zenodo.8014774
+Clémence Réda. (2023). 
+Jupyter Notebooks for building drug repurposing datasets in collaborative filtering (v2.0.0). 
+Zenodo. https://doi.org/10.5281/zenodo.8014774
 ```
 
 ## Community guidelines with respect to contributions, issue reporting, and support
