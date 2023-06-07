@@ -13,30 +13,64 @@ from bs4 import BeautifulSoup
 
 import pubchempy as pcp
 
+## From https://github.com/RECeSS-EU-Project/drug-repurposing-datasets
+
 ###########################
 ## VERBOSE               ##
 ###########################
 
 def print_dataset(ratings, user_col, item_col, rating_col):
     '''
-        @param\tratings\tPandas Dataframe: 3 columns (user_col x item_col x rating_col) that lists all non zero values {-1,1}.
-        @param\tuser_col\tPython character string: how to name the column associated with users.
-        @param\titem_col\tPython character string: how to name the column associated with items.
-        @param\trating_col\tPython character string: how to name the column associated with ratings.
+    Prints values of a drug repurposing dataset
+
+    ...
+
+    Parameters
+    ----------
+    ratings : pandas.DataFrame of shape (n_ratings, 3)
+        the list of ratings with columns user_col, item_col, rating_col
+    user_col : str
+        column denoting users
+    item_col : str
+        column denoting items
+    rating_col : str
+        column denoting ratings in {-1, 0, 1}
+
+    Returns
+    -------
+    None
+
+    Prints
+    -------
+    The number of items/drugs, users/diseases, and the number of positive (1), negative (-1) and unknown (0) matchings.
     '''
+    assert ratings.shape[1]==3
+    assert all([c in ratings.columns for c in [user_col, item_col, rating_col]])
+    assert all([a in [-1,0,1] for a in np.unique(ratings[[rating_col]].values)])
     ratings2 = ratings.copy()
     ratings2[item_col] = ratings2[item_col].astype(str)
     args = [len(np.unique(ratings2[item_col])), len(np.unique(ratings2[user_col]))]
     args += [ratings2.loc[ratings2[rating_col]==v].shape[0] for v in [1,-1,0]]
     assert args[2]+args[3]+args[4]==ratings2.shape[0]
     args[-1] = args[-1] if (args[-1]>0) else args[0]*args[1]-args[2]-args[3]
-    dataset_str = "Ratings: %d drugs\t%d diseases\n%d positive, %d negative, and %d unknown matchings"
+    dataset_str = "Ratings: %d drugs\t%d diseases\n%d positive, %d negative, %d unknown matchings"
     print(dataset_str % tuple(args))
     
 def compute_sparsity(df):
     '''
-        @param\tdf\tPandas Dataframe: size #items x #users containing values {-1,0,1}.
-        @return\tsparsity\tPython int: 100 times the number of non zero values divided by the total number of values in @df.
+    Computes the sparsity number of a collaborative filtering dataset
+
+    ...
+
+    Parameters
+    ----------
+    df : pandas.DataFrame of shape (n_items, n_users)
+        the matrix of ratings where unknown matchings are denoted with 0
+
+    Returns
+    -------
+    sparsity : float
+        the percentage of non missing values in the matrix of ratings
     '''
     return 100*(np.sum(df.values!=0)/(df.shape[0]*df.shape[1]))
 
@@ -46,13 +80,27 @@ def compute_sparsity(df):
 
 def matrix2ratings(df, user_col="user", item_col="item", rating_col="rating"):
     '''
-        @param\tdf\tPandas Dataframe: size #items x #users containing values {-1,0,1}.
-        @param\tuser_col\tPython character string: how to name the column associated with users.
-        @param\titem_col\tPython character string: how to name the column associated with items.
-        @param\trating_col\tPython character string: how to name the column associated with ratings.
-        @return\tres_df\tPandas Dataframe: 3 columns (user_col x item_col x rating_col) that lists all non zero values.
+    Converts a matrix into a list of ratings
+
+    ...
+
+    Parameters
+    ----------
+    df : pandas.DataFrame of shape (n_items, n_users)
+        the matrix of ratings in {-1, 1, 0} where unknown matchings are denoted with 0
+    user_col : str
+        column denoting users
+    item_col : str
+        column denoting items
+    rating_col : str
+        column denoting ratings in {-1, 0, 1}
+
+    Returns
+    -------
+    ratings : pandas.DataFrame of shape (n_ratings, 3)
+        the list of known ratings where the first column correspond to users, second to items, third to ratings
     '''
-    assert all([a in [-1,0,1] for a in np.unique(df.values.flatten())])
+    assert all([a in [-1,0,1] for a in np.unique(df.values)])
     non_missing = np.argwhere(df.values!=0)
     res_df = pd.DataFrame([], index=range(non_missing.shape[0]))
     res_df[user_col] = [df.columns[x] for x in list(non_missing[:, 1].flatten())]
@@ -60,13 +108,55 @@ def matrix2ratings(df, user_col="user", item_col="item", rating_col="rating"):
     res_df[rating_col] = [df.values[i,j] for i,j in non_missing.tolist()]
     return res_df[[user_col,item_col,rating_col]]
 
-def load_dataset(model_name, save_folder="./"):
+def ratings2matrix(ratings, user_col, item_col, rating_col):
     '''
-        @param\tmodel_name\tPython character string: Name of the dataset to load.
-        @param\tsave_folder\tPython character string[default="./"]: (Relative) path to which the dataset should be stored.
-        @return\tdi\tPython dictionary: {"A": drug-disease matrix Nd x Np, "P": disease feature matrix Fp x Np, "S": drug feature matrix Fd x Nd}
-        P and S are real-valued matrices
-        A has values in {-1,0,1}. -1 means negative matching, 1: positive matching, 0: unknown matching.
+    Converts a list of ratings into a matrix
+
+    ...
+
+    Parameters
+    ----------
+    ratings : pandas.DataFrame of shape (n_ratings, 3)
+        the list of known ratings where the first column (user_col) correspond to users, second (item_col) to items, third (rating_col) to ratings in {-1,0,1}
+    user_col : str
+        column denoting users
+    item_col : str
+        column denoting items
+    rating_col : str
+        column denoting ratings in {-1, 0, 1}
+
+    Returns
+    -------
+    df : pandas.DataFrame of shape (n_items, n_users)
+        the matrix of ratings in {-1, 1, 0} where unknown matchings are denoted with 0
+    '''
+    assert ratings.shape[1]==3
+    assert all([c in ratings.columns for c in [item_col, user_col, rating_col]])
+    assert all([a in [-1,0,1] for a in np.unique(ratings[[rating_col]].values)])
+    res_df = ratings.pivot_table(index=item_col, columns=user_col, values=rating_col).fillna(0).astype(int)
+    return res_df
+
+#############################
+## LOADING DATASETS        ##
+#############################
+
+def load_dataset(model_name, save_folder="./", sep_feature="-"):
+    '''
+    Loads a drug repurposing dataset
+
+    ...
+
+    Parameters
+    ----------
+    model_name : str
+        the name of the dataset to load. Should belong to the following list: ["Gottlieb", "DNdataset", "Cdataset", "LRSSL", "PREDICT_Gottlieb", "TRANSCRIPT", "PREDICT"]
+    save_folder : str
+        the path to the folder where dataset-related files are or will be stored
+
+    Returns
+    -------
+    dataset_di : dictionary
+        a dictionary where key "ratings_mat" contains the drug-disease matching pandas.DataFrame of shape (n_drugs, n_diseases) (where missing values are denoted by 0), key "users" correspond to the disease pandas.DataFrame of shape (n_disease_features, n_diseases), and "items" correspond to the drug feature pandas.DataFrame of shape (n_drug_features, n_drugs)
     '''
     assert model_name in ["Gottlieb", "Cdataset_Aonly", "indep", "Fdataset", "DNdataset", "Cdataset", "TRANSCRIPT", "PREDICT", "LRSSL", "LRSSL2", "PREDICT_Gottlieb"]
     if (model_name == "LRSSL"):
@@ -102,18 +192,18 @@ def load_dataset(model_name, save_folder="./"):
             S_chemical = ddt["lrsslsimmatdcchemical"]
             S_sideeffects = ddt["lrsslsimmatdcgo"]
             S = pd.DataFrame(np.concatenate((S_chemical,S_sideeffects), axis=0), index=range(S_chemical.shape[0]+S_sideeffects.shape[0]), columns=["drug%d" % (i+1) for i in range(S_chemical.shape[1])])
-            S.index = [("chemical--" if (iss < S_chemical.shape[0]) else "se--")+str(s) for iss, s in enumerate(list(S.index))]
+            S.index = [("chemical" if (iss < S_chemical.shape[0]) else "se")+sep_feature+("drug%d" % s+1) for iss, s in enumerate(list(S.index))]
             P = ddt["lrsslsimmatdg"]
-            P = pd.DataFrame(P, index=range(P.shape[0]), columns=["disease%d" % (i+1) for i in range(P.shape[1])])
+            P = pd.DataFrame(P, index=["disease%d" % (i+1) for i in range(P.shape[0])], columns=["disease%d" % (i+1) for i in range(P.shape[1])])
         elif (mmodel_name=="PREDICT"):
             A = ddt['predictAdMatdgc'].T
             S_chemical = ddt['predictSimMatdcChemical']
             S_domain = ddt['predictSimMatdcDomain']
             S_GO = ddt['predictSimMatdcGo']
             S = pd.DataFrame(np.concatenate((S_chemical,S_domain,S_GO), axis=0), index=range(S_chemical.shape[0]+S_domain.shape[0]+S_GO.shape[0]), columns=["drug%d" % (i+1) for i in range(S_chemical.shape[1])])
-            S.index = [("chemical--" if (iss < S_chemical.shape[0]) else ("domain--" if (iss < S_chemical.shape[0]+S_domain.shape[0]) else "go--"))+str(s) for iss, s in enumerate(list(S.index))]
+            S.index = [("chemical" if (iss < S_chemical.shape[0]) else ("domain" if (iss < S_chemical.shape[0]+S_domain.shape[0]) else "go"))+sep_feature+("drug%d" % (s+1)) for iss, s in enumerate(list(S.index))]
             P = ddt['predictSimMatdg']
-            P = pd.DataFrame(P, index=range(P.shape[0]), columns=["disease%d" % (i+1) for i in range(P.shape[1])])
+            P = pd.DataFrame(P, index=["disease%d" % (i+1) for i in range(P.shape[0])], columns=["disease%d" % (i+1) for i in range(P.shape[1])])
         else:
             raise ValueError("Undefined dataset '%s'" % mmodel_name)
         A = pd.DataFrame(A, index=S.columns, columns=P.columns)
@@ -144,9 +234,9 @@ def load_dataset(model_name, save_folder="./"):
                 S_se = pd.read_csv(path+"se_PREDICT_matrix.csv", engine="python", index_col=0)
                 S_signature = pd.read_csv(path+"signature_PREDICT_matrix.csv", engine="python", index_col=0)
                 P = P_phenotype.T.join(P_semantic.T, how="outer").T
-                P.index = [("phenotype--" if (iss < P_phenotype.shape[0]) else "semantic--")+str(s) for iss, s in enumerate(list(P.index))]
+                P.index = [("phenotype" if (iss < P_phenotype.shape[0]) else "semantic")+sep_feature+str(s) for iss, s in enumerate(list(P.index))]
                 S = S_se.T.join(S_signature.T, how="outer").T
-                S.index = [("se--" if (iss < S_se.shape[0]) else "signature--")+str(s) for iss, s in enumerate(list(S.index))]
+                S.index = [("se" if (iss < S_se.shape[0]) else "signature")+sep_feature+str(s) for iss, s in enumerate(list(S.index))]
                 A = A.loc[S.columns][P.columns]
     if (model_name == "Gottlieb"):
         url_mbirw = "https://raw.githubusercontent.com/bioinfomaticsCSU/MBiRW/master/Datasets/"
@@ -230,35 +320,47 @@ def load_dataset(model_name, save_folder="./"):
             A.columns = disease_names
             P.index = disease_names
             P.columns = disease_names
+    A = A.fillna(0).astype(int)
+    P = P.astype(float)
+    S = S.astype(float)
     assert A.shape[0] == S.shape[1]
     assert A.shape[1] == P.shape[1]
-    return {"ratings_mat": A.fillna(0).astype(int), "users": P.astype(float), "items": S.astype(float)}
+    assert all([a in [-1, 0, 1] for a in np.unique(A).tolist()])
+    return {"ratings_mat": A, "users": P, "items": S}
 
-def merge_ratings(rating_dfs, user_col, item_col, rating_col, verbose=True):
+#############################
+## MERGING RATINGS         ##
+#############################
+
+def merge_ratings(rating_dfs, user_col, item_col, rating_col):
     '''
-        @param\trating_dfs\tPython list of Pandas dataframes: Pandas dataframes size #items x #users containing values {-1,0,1} to merge
-        @param\tuser_col\tPython character string: the name of the column associated with users.
-        @param\titem_col\tPython character string: the name of the column associated with items.
-        @param\trating_col\tPython character string: the name of the column associated with ratings.
-                We correct inconsistent outcomes as follows:
-                - If there is at least one negative outcome (-1) reported, then it is a negative outcome (-1)
-                 (in order to be conservative with respect to drug recommendations).
-                - If there is at least one positive outcome (1) and no negative outcome (-1) reported, then it is a positive outcome (1).
-        @return\tres_df\tPandas Dataframe: merged Pandas Dataframe of ratings containing values {-1,0,1}
+    Merges rating lists from several sources by solving conflicts. Conflicting ratings are resolved as follows: if there is at least one negative rating (-1) reported for a (drug, disease) pair, then the final rating is negative (-1); if there is at least one positive rating (1) and no negative rating (-1) reported, then the final rating is positive (1)
+
+    ...
+
+    Parameters
+    ----------
+    rating_dfs : list of pandas.DataFrame of shape (n_ratings, 3)
+        the list of rating lists where one column (of name user_col) is associated with users, one column (of name item_col) is associated with items, and one column (of name rating_col) is associated with ratings in {-1, 0, 1}
+    user_col : str
+        column denoting users
+    item_col : str
+        column denoting items
+    rating_col : str
+        column denoting ratings in {-1, 0, 1}
+    verbose : bool
+       
+    Returns
+    -------
+    rating_df : pandas.DataFrame of shape (n_ratings, 3)
+        the list of rating lists where one column (of name user_col) is associated with users, one column (of name item_col) is associated with items, and one column (of name rating_col) is associated with ratings in {-1, 0, 1}
     '''
+    for ratings in ratings_dfs:
+        assert ratings.shape[1]==3
+        assert all([c in ratings.columns for c in [item_col, user_col, rating_col]])
+        assert all([a in [-1,0,1] for a in np.unique(ratings[[rating_col]].values)])
     ratings = pd.concat(tuple([df.fillna(0)[[user_col, item_col, rating_col]] for df in rating_dfs]), axis=0)
     ratings.index = ["--".join(list(ratings.iloc[idx][[user_col,item_col]].astype(str))) for idx in range(len(ratings.index))]
     ratings[rating_col] = ratings[[rating_col]].groupby(level=0).apply(lambda x : ((-1)**((x==-1).any().any()))*int((x!=0).any().any())).astype(int)
     ratings.index = range(ratings.shape[0])
     return ratings
-
-def ratings2matrix(ratings, user_col, item_col, rating_col):
-    '''
-        @param\tratings\tPandas Dataframe: 3 columns (user_col x item_col x rating_col) that lists all non zero values {-1,1}.
-        @param\tuser_col\tPython character string: how to name the column associated with users.
-        @param\titem_col\tPython character string: how to name the column associated with items.
-        @param\trating_col\tPython character string: how to name the column associated with ratings.
-        @return\tres_df\tPandas Dataframe: size #items x #users containing values {-1,0,1}.
-    '''
-    res_df = ratings.pivot_table(index=item_col, columns=user_col, values=rating_col).fillna(0).astype(int)
-    return res_df
