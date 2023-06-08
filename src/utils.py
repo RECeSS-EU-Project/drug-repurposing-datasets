@@ -8,11 +8,6 @@ import scipy.io
 import pickle
 from time import sleep
 
-import requests
-from bs4 import BeautifulSoup
-
-import pubchempy as pcp
-
 ## From https://github.com/RECeSS-EU-Project/drug-repurposing-datasets
 
 ###########################
