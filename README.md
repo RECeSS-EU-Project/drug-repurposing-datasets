@@ -14,7 +14,7 @@ The latest versions (v2.0.0 and v2.0.1 of May 29th, 2023) of those datasets corr
 
 ### Global variables
 
-Update to your liking the following file *paths_global.py*. The corresponding files and how to obtain them are detailed in notebooks/FEATURELESS_dataset.ipynb.
+Update to your liking the following file *paths_global.py*. The corresponding files and how to obtain them are detailed in *notebooks/FEATURELESS_dataset.ipynb*.
 
 ### Environment
 
