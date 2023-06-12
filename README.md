@@ -44,4 +44,4 @@ Zenodo. https://doi.org/10.5281/zenodo.8014774
 
 ## Community guidelines with respect to contributions, issue reporting, and support
 
-[Pull requests](https://github.com/RECeSS-EU-Project/drug-repurposing-datasets/pulls) and [issue flagging](https://github.com/RECeSS-EU-Project/drug-repurposing-datasets/issues) are welcome, and can be made through the GitHub interface. Support can be provided by reaching out to recess-project-at-proton.me.
+[Pull requests](https://github.com/RECeSS-EU-Project/drug-repurposing-datasets/pulls) and [issue flagging](https://github.com/RECeSS-EU-Project/drug-repurposing-datasets/issues) are welcome, and can be made through the GitHub interface. Support can be provided by reaching out to ``recess-project[at]proton.me``.
