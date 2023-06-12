@@ -24,6 +24,7 @@ In order to run the notebooks:
 conda create -n drug_repurposing python=3.8.5 -y
 conda activate drug_repurposing
 python3 -m pip install -r requirements.txt
+python3 -m pip install notebook>=6.5.4 markupsafe==2.0.1 ## packages for Jupyter notebook
 conda deactivate
 conda activate drug_repurposing
 cd notebooks/ && jupyter notebook
