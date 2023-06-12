@@ -1,5 +1,7 @@
 # Drug Repurposing Datasets for Collaborative Filtering Methods
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8014775.svg)](https://doi.org/10.5281/zenodo.8014775)
+
 This repository is a part of the EU-funded [RECeSS project](https://recess-eu-project.github.io) (#101102016), and hosts the notebooks and code files which helped to build the following novel drug repurposing datasets:
 
 - TRANSCRIPT dataset [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7982969.svg)](https://doi.org/10.5281/zenodo.7982969)
