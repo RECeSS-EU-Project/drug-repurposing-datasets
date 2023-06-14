@@ -10,6 +10,7 @@
     "issueTracker": "https://github.com/RECeSS-EU-Project/drug-repurposing-datasets/issues",
     "name": "drug-repurposing-datasets",
     "version": "2.0.0",
+    "identifier": "10.5281/zenodo.8014774",
     "description": "This repository is a part of the EU-funded RECeSS project (#101102016), and hosts the notebooks and code files which helped to build the following novel drug repurposing datasets: TRANSCRIPT dataset (https://doi.org/10.5281/zenodo.7982969) and PREDICT dataset (https://doi.org/10.5281/zenodo.7982964).",
     "applicationCategory": "Drug development",
     "releaseNotes": "This version is updated with versions of the different databases and knowledge as of May 2023.",
