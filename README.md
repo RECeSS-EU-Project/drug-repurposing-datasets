@@ -1,3 +1,5 @@
+![funding logo](https://raw.githubusercontent.com/RECeSS-EU-Project/RECeSS-EU-Project.github.io/main/assets/images/header%2BEU_rescale.jpg)
+
 # Drug Repurposing Datasets for Collaborative Filtering Methods
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8014775.svg)](https://doi.org/10.5281/zenodo.8014775)
