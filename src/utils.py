@@ -8,6 +8,8 @@ import scipy.io
 import pickle
 from time import sleep
 
+import warnings
+
 ## From https://github.com/RECeSS-EU-Project/drug-repurposing-datasets
 
 ###########################
@@ -153,7 +155,7 @@ def load_dataset(model_name, save_folder="./", sep_feature="-"):
     dataset_di : dictionary
         a dictionary where key "ratings_mat" contains the drug-disease matching pandas.DataFrame of shape (n_drugs, n_diseases) (where missing values are denoted by 0), key "users" correspond to the disease pandas.DataFrame of shape (n_disease_features, n_diseases), and "items" correspond to the drug feature pandas.DataFrame of shape (n_drug_features, n_drugs)
     '''
-    assert model_name in ["Gottlieb", "Cdataset_Aonly", "indep", "Fdataset", "DNdataset", "Cdataset", "TRANSCRIPT", "PREDICT", "LRSSL", "LRSSL2", "PREDICT_Gottlieb"]
+    assert model_name in ["Gottlieb", "Cdataset_Aonly", "indep", "Fdataset", "DNdataset", "Cdataset", "TRANSCRIPT", "PREDICT", "LRSSL", "LRSSL2", "PREDICT_Gottlieb", "TRANSCRIPT_v1", "PREDICT_v1"]
     if (model_name == "LRSSL"):
         url_lrssl = "https://raw.githubusercontent.com/LiangXujun/LRSSL/master/"
         lrssl_dataset_path = save_folder+"LRSSL/"
@@ -181,7 +183,9 @@ def load_dataset(model_name, save_folder="./", sep_feature="-"):
         if (not os.path.exists(dda_skf_dataset_path+mmodel_name+".mat")):
             subprocess.call(" ".join(['mkdir', '-p', dda_skf_dataset_path]), shell=True)
             subprocess.call(" ".join(["wget", "-qO", dda_skf_dataset_path+mmodel_name+".mat", url_dda_skf+mmodel_name+".mat"]), shell=True)
-        ddt = scipy.io.loadmat(dda_skf_dataset_path+mmodel_name+".mat")
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            ddt = scipy.io.loadmat(dda_skf_dataset_path+mmodel_name+".mat")
         if (mmodel_name=="LRSSL"):
             A = ddt["lrssladmatdgc"]
             S_chemical = ddt["lrsslsimmatdcchemical"]
@@ -202,28 +206,31 @@ def load_dataset(model_name, save_folder="./", sep_feature="-"):
         else:
             raise ValueError("Undefined dataset '%s'" % mmodel_name)
         A = pd.DataFrame(A, index=S.columns, columns=P.columns)
-    if (model_name in ["TRANSCRIPT", "PREDICT"]):
+    if (model_name in ["TRANSCRIPT", "TRANSCRIPT_v1", "PREDICT", "PREDICT_v1"]):
         path=save_folder+model_name+"/" 
         fnames = {"A": "ratings_mat.csv", "P": "users.csv", "S": "items.csv"} 
         if (not os.path.exists(path+fnames["A"])):
-            if (model_name == "TRANSCRIPT"):
-                url_dataset = "https://zenodo.org/record/7982976/files/TRANSCRIPT_dataset_v2.0.0.zip"
+            if ("TRANSCRIPT" in model_name):
+                url_dataset = "https://zenodo.org/record/7982976/files/TRANSCRIPT_dataset_v2.0.0.zip" if (model_name=="TRANSCRIPT") else "https://zenodo.org/record/7982970/files/TRANSCRIPT_dataset_v1.0.0.zip"
             else:
                 print("Run the notebook or use the publicly available data (by default, download the latest public dataset)")
-                url_dataset = "https://zenodo.org/record/7983090/files/PREDICT_dataset_v2.0.0.zip"
-            subprocess.call(" ".join(["wget", "-qO", save_folder+model_name+".zip", "\""+url_dataset+"\""]), shell=True)  
-            subprocess.call(" ".join(["unzip", save_folder+model_name+".zip", "&&", "mv", model_name+"_dataset_v2.0.0", save_folder+model_name, "&&", "rm", "-f", save_folder+model_name+".zip"]), shell=True)   
-        if (model_name == "TRANSCRIPT"):
+                url_dataset = "https://zenodo.org/record/7983090/files/PREDICT_dataset_v2.0.0.zip" if (model_name=="PREDICT") else "https://zenodo.org/record/8087306/files/PREDICT_dataset_v1.0.0.zip"
+            subprocess.call(" ".join(["wget", "-qO", save_folder+model_name+".zip", "\""+url_dataset+"\""]), shell=True)
+            subprocess.call(" ".join(["unzip", "-qq", save_folder+model_name+".zip"]), shell=True)   
+            subprocess.call(" ".join(["mv", model_name.split("_")[0]+"_dataset_v"+("2" if ("v1" not in model_name) else "1")+".0.0", save_folder+model_name, "&&", "rm", "-f", save_folder+model_name+".zip"]), shell=True) 
+        if ("TRANSCRIPT" in model_name):
             assert os.path.exists(path+fnames["A"])
             assert os.path.exists(path+fnames["P"])
             assert os.path.exists(path+fnames["S"])
-            A, P, S = [pd.read_csv(path+fnames[k], engine="python", index_col=0) for k in ["A", "P", "S"]]
+            A, P, S = [pd.read_csv(path+fnames[k], engine="python", index_col=0) for k in ["A", "P", "S"]]  
         else:
             assert os.path.exists(path+fnames["A"])
             if (os.path.exists(path+fnames["P"]) and os.path.exists(path+fnames["S"])):
-                A, P, S = [pd.read_csv(path+fnames[k], engine="python", index_col=0) for k in ["A", "P", "S"]]
+                A, P, S = [pd.read_csv(path+fnames[k], engine="python", index_col=0) for k in ["A", "P", "S"]] 
             else: ## use publicly available data 
                 A = pd.read_csv(path+fnames["A"], engine="python", index_col=0)
+                A = A[[a for a in A.columns if (".1"!=a[-len(".1"):])]]
+                A.index = A.index.astype(str)
                 P_phenotype = pd.read_csv(path+"disease_phenotype_PREDICT_matrix.csv", engine="python", index_col=0)
                 P_semantic = pd.read_csv(path+"disease_semantic_PREDICT_matrix.csv", engine="python", index_col=0)
                 S_se = pd.read_csv(path+"se_PREDICT_matrix.csv", engine="python", index_col=0)
@@ -231,8 +238,12 @@ def load_dataset(model_name, save_folder="./", sep_feature="-"):
                 P = P_phenotype.T.join(P_semantic.T, how="outer").T
                 P.index = [("phenotype" if (iss < P_phenotype.shape[0]) else "semantic")+sep_feature+str(s) for iss, s in enumerate(list(P.index))]
                 S = S_se.T.join(S_signature.T, how="outer").T
-                S.index = [("se" if (iss < S_se.shape[0]) else "signature")+sep_feature+str(s) for iss, s in enumerate(list(S.index))]
+                if ("v1" not in model_name):
+                    S.index = [("se" if (iss < S_se.shape[0]) else "signature")+sep_feature+str(s) for iss, s in enumerate(list(S.index))]
+                else:
+                    S = S[[s for s in S.columns if (s in A.index)]]
                 A = A.loc[S.columns][P.columns]
+        A.index = A.index.astype(str) 
     if (model_name == "Gottlieb"):
         url_mbirw = "https://raw.githubusercontent.com/bioinfomaticsCSU/MBiRW/master/Datasets/"
         gottlieb_dataset_path = save_folder+"Gottlieb_dataset/MBiRW_files/"
@@ -267,7 +278,9 @@ def load_dataset(model_name, save_folder="./", sep_feature="-"):
             subprocess.call(" ".join(['mkdir', '-p', indep_dataset_path]), shell=True)
             for fname in ["DiDrMat.mat","R_Wdname","R_Wrname"]:
                 subprocess.call(" ".join(["wget", "-qO", indep_dataset_path+fname, url_mbirw+fname]), shell=True)
-        A = scipy.io.loadmat(indep_dataset_path+"DiDrMat.mat")['R_Wdr']
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            A = scipy.io.loadmat(indep_dataset_path+"DiDrMat.mat")['R_Wdr']
         A = pd.DataFrame(A, index=range(A.shape[0]), columns=range(A.shape[1])).T
         drug_names = pd.read_csv(indep_dataset_path+"R_Wrname", header=None).T.values.tolist()[0]
         disease_names = pd.read_csv(indep_dataset_path+"R_Wdname", header=None).T.values.tolist()[0]
