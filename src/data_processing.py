@@ -265,8 +265,11 @@ def smiles_similarity(s1, s2):
     sim = indigo_module.similarity(fp1, fp2, "tanimoto")
     return sim
 
-##TODO DOCS
 def get_pubchem_smiles(pubchem_id):
+    '''
+        @param\tpubchem_id\ta PubChem CID
+        @return\tsmiles\tSMILES fingerprint from PubChem
+    '''
     cpd = pcp.Compound.from_cid(int(pubchem_id))
     return cpd.canonical_smiles
 
@@ -340,7 +343,7 @@ def get_drugbank_ids(drugnames, driver_folder="./", verbose=True):
             print("%d/%d %s %s" % (idr+1, len(drugnames), drugname, str(drugbank_cid)))
     driver.close()
     print(missing_lst)
-    return drugbank_cids ## TODO
+    return drugbank_cids
 
 def get_pubchemcid_from_SIDER(drugnames, driver_folder="./", verbose=False):
     '''
