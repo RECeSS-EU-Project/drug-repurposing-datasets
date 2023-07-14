@@ -153,7 +153,7 @@ def load_dataset(model_name, save_folder="./", sep_feature="-"):
     Returns
     -------
     dataset_di : dictionary
-        a dictionary where key "ratings_mat" contains the drug-disease matching pandas.DataFrame of shape (n_drugs, n_diseases) (where missing values are denoted by 0), key "users" correspond to the disease pandas.DataFrame of shape (n_disease_features, n_diseases), and "items" correspond to the drug feature pandas.DataFrame of shape (n_drug_features, n_drugs)
+        a dictionary where key "ratings" contains the drug-disease matching pandas.DataFrame of shape (n_drugs, n_diseases) (where missing values are denoted by 0), key "users" correspond to the disease pandas.DataFrame of shape (n_disease_features, n_diseases), and "items" correspond to the drug feature pandas.DataFrame of shape (n_drug_features, n_drugs)
     '''
     assert model_name in ["Gottlieb", "Cdataset_Aonly", "indep", "Fdataset", "DNdataset", "Cdataset", "TRANSCRIPT", "PREDICT", "LRSSL", "LRSSL2", "PREDICT_Gottlieb", "TRANSCRIPT_v1", "PREDICT_v1"]
     if (model_name == "LRSSL"):
@@ -319,7 +319,7 @@ def load_dataset(model_name, save_folder="./", sep_feature="-"):
         A = A.T
         if (model_name in ["Cdataset", "Fdataset"]):
             model_name2 = "Cdataset_Aonly" if (model_name=="Cdataset") else "Gottlieb"
-            A_dataset = load_dataset(model_name2, save_folder=save_folder)["ratings_mat"]
+            A_dataset = load_dataset(model_name2, save_folder=save_folder)["ratings"]
             drug_names = list(A_dataset.index)
             disease_names = list(A_dataset.columns)
             A.index = drug_names
@@ -331,10 +331,12 @@ def load_dataset(model_name, save_folder="./", sep_feature="-"):
     A = A.fillna(0).astype(int)
     P = P.astype(float)
     S = S.astype(float)
+    S.columns = list(map(str,S.columns))
+    P.columns = list(map(str,P.columns))
     assert A.shape[0] == S.shape[1]
     assert A.shape[1] == P.shape[1]
     assert all([a in [-1, 0, 1] for a in np.unique(A).tolist()])
-    return {"ratings_mat": A, "users": P, "items": S}
+    return {"ratings": A, "users": P, "items": S}
 
 #############################
 ## MERGING RATINGS         ##
