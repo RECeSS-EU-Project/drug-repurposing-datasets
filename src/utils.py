@@ -305,7 +305,7 @@ def load_dataset(model_name, save_folder="./", sep_feature="-"):
         S = pd.DataFrame([], index=A.index).T
     elif (model_name in ["Cdataset", "DNdataset"]):
         drrs_dataset_path = save_folder+"Cdatasets/DRRS_files/"
-        url_drrs = "https://recess-eu-project.github.io/assets/datasets/"
+        url_drrs = "https://github.com/RECeSS-EU-Project/RECeSS-EU-Project.github.io/raw/main/assets/datasets/"
         subprocess.call(" ".join(["mkdir", "-p", drrs_dataset_path]), shell=True)
         if (not os.path.exists(drrs_dataset_path+model_name+"s/DiDrA.txt")):
             if (not os.path.exists(drrs_dataset_path+model_name+"s.zip")):
