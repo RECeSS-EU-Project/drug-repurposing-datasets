@@ -244,7 +244,7 @@ def load_dataset(model_name, save_folder="./", sep_feature="-"):
                     S = S[[s for s in S.columns if (s in A.index)]]
                 A = A.loc[S.columns][P.columns]
         A.index = A.index.astype(str) 
-    if (model_name == "Gottlieb"):
+    if (model_name in ["Gottlieb","Fdataset"]):
         url_mbirw = "https://raw.githubusercontent.com/bioinfomaticsCSU/MBiRW/master/Datasets/"
         gottlieb_dataset_path = save_folder+"Gottlieb_dataset/MBiRW_files/"
         if (not os.path.exists(gottlieb_dataset_path+"DiDrAMat")):
@@ -303,9 +303,9 @@ def load_dataset(model_name, save_folder="./", sep_feature="-"):
         A.columns = disease_names
         P = pd.DataFrame([], index=A.columns).T
         S = pd.DataFrame([], index=A.index).T
-    elif (model_name in ["Cdataset", "Fdataset", "DNdataset"]):
+    elif (model_name in ["Cdataset", "DNdataset"]):
         drrs_dataset_path = save_folder+"Cdatasets/DRRS_files/"
-        url_drrs = "http://bioinformatics.csu.edu.cn/resources/softs/DrugRepositioning/DRRS/soft/"
+        url_drrs = "https://recess-eu-project.github.io/assets/datasets/"
         subprocess.call(" ".join(["mkdir", "-p", drrs_dataset_path]), shell=True)
         if (not os.path.exists(drrs_dataset_path+model_name+"s/DiDrA.txt")):
             if (not os.path.exists(drrs_dataset_path+model_name+"s.zip")):
